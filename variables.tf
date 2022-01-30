@@ -1,3 +1,7 @@
+#######
+# VPC Variables
+#######
+
 variable "vpc_name" {
   description = "Name of VPC"
   type        = string
@@ -42,3 +46,7 @@ variable "vpc_tags" {
     Environment = "dev"
   }
 }
+
+#######
+# ASG Variables
+#######
