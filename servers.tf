@@ -31,6 +31,7 @@ module "asg" {
   wait_for_capacity_timeout = 0
   health_check_type         = "EC2"
   vpc_zone_identifier       = module.vpc.private_subnets
+  target_group_arns         = module.alb.target_group_arns
 
 
   initial_lifecycle_hooks = [
@@ -173,3 +174,71 @@ module "asg" {
     extra_tag2 = "extra_value2"
   }
 }
+
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 6.0"
+
+  name = "and-loadbalancer"
+
+  load_balancer_type = "application"
+
+  vpc_id             = module.vpc.vpc_id
+  subnets            = module.vpc.public_subnets
+  security_groups    = [module.vpc.default_security_group_id]
+  
+
+  # access_logs = {
+  #   bucket = "my-alb-logs"
+  # }
+
+  target_groups = [
+    {
+      name_prefix      = "pref-"
+      backend_protocol = "HTTP"
+      backend_port     = 80
+      target_type      = "instance"
+      targets = [
+        {
+          target_id = "i-022d867358fa0ec93"
+          port = 80
+        },
+        {
+          target_id = "i-011fcb73baf867788"
+          port = 80
+        }
+      ]
+    }
+  ]
+
+  https_listeners = [
+    {
+      port               = 443
+      protocol           = "HTTPS"
+      certificate_arn    = module.acm.acm_certificate_arn
+      target_group_index = 0
+    }
+  ]
+
+  http_tcp_listeners = [
+    {
+      port        = 80
+      protocol    = "HTTP"
+      action_type = "redirect"
+      redirect = {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+  ]
+
+  tags = {
+    Environment = "Test"
+  }
+}
+
+# resource "aws_autoscaling_attachment" "alb_autoscale" {
+#   alb_target_group_arn   = module.alb.target_group_arn
+#   autoscaling_group_name = "${aws_autoscaling_group.autoscale_group.id}"
+# }
