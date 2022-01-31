@@ -73,7 +73,7 @@ module "asg" {
   instance_type     = "t3.micro"
   ebs_optimized     = true
   enable_monitoring = true
-  user_data         = "${file("install-nginx.sh")}"
+  user_data_base64  = "${filebase64("install-nginx.sh")}"
 
   block_device_mappings = [
     {
