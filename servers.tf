@@ -1,22 +1,22 @@
-# module "ec2_instances" {
-#   source  = "terraform-aws-modules/ec2-instance/aws"
-#   version = "3.4.0"
+data "aws_ami" "amazon_linux2" {
+  most_recent      = true
+  owners           = ["137112412989"]
 
-#   for_each = toset(["one", "two"])
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-kernel-*-x86_64-gp2"]
+  }
 
-#   name = "instance-${each.key}"
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
 
-#   ami                    = "ami-00ae935ce6c2aa534"
-#   instance_type          = "t2.micro"
-#   user_data              = "${file("install-nginx.sh")}"
-#   vpc_security_group_ids = [module.vpc.default_security_group_id]
-#   subnet_id              = module.vpc.public_subnets[0]
-
-#   tags = {
-#     Terraform   = "true"
-#     Environment = "dev"
-#   }
-# }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
 
 module "asg" {
   source  = "terraform-aws-modules/autoscaling/aws"
@@ -70,11 +70,11 @@ module "asg" {
   use_lt    = true
   create_lt = true
 
-  image_id          = "ami-00ae935ce6c2aa534"
+  image_id          = data.aws_ami.amazon_linux2.image_id
   instance_type     = "t3.micro"
   ebs_optimized     = true
   enable_monitoring = true
-  user_data_base64  = "${filebase64("install-nginx.sh")}"
+  user_data_base64  = filebase64("install-nginx.sh")
 
   block_device_mappings = [
     {
@@ -103,21 +103,21 @@ module "asg" {
     capacity_reservation_preference = "open"
   }
 
-#   cpu_options = {
-#     core_count       = 1
-#     threads_per_core = 1
-#   }
+  #   cpu_options = {
+  #     core_count       = 1
+  #     threads_per_core = 1
+  #   }
 
   credit_specification = {
     cpu_credits = "standard"
   }
 
-#   instance_market_options = {
-#     market_type = "spot"
-#     spot_options = {
-#       block_duration_minutes = 60
-#     }
-#   }
+  #   instance_market_options = {
+  #     market_type = "spot"
+  #     spot_options = {
+  #       block_duration_minutes = 60
+  #     }
+  #   }
 
   metadata_options = {
     http_endpoint               = "enabled"
@@ -130,13 +130,7 @@ module "asg" {
       delete_on_termination = true
       description           = "eth0"
       device_index          = 0
-      security_groups       = [module.vpc.default_security_group_id]
-    },
-    {
-      delete_on_termination = true
-      description           = "eth1"
-      device_index          = 1
-      security_groups       = [module.vpc.default_security_group_id]
+      security_groups       = [aws_security_group.servers_sg.id]
     }
   ]
 
@@ -153,7 +147,7 @@ module "asg" {
       resource_type = "volume"
       tags          = { WhatAmI = "Volume" }
     },
-  
+
   ]
 
   tags = [
@@ -183,10 +177,10 @@ module "alb" {
 
   load_balancer_type = "application"
 
-  vpc_id             = module.vpc.vpc_id
-  subnets            = module.vpc.public_subnets
-  security_groups    = [module.vpc.default_security_group_id]
-  
+  vpc_id          = module.vpc.vpc_id
+  subnets         = module.vpc.public_subnets
+  security_groups = [aws_security_group.lb_sg.id]
+
 
   # access_logs = {
   #   bucket = "my-alb-logs"
@@ -198,16 +192,6 @@ module "alb" {
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "instance"
-      targets = [
-        {
-          target_id = "i-022d867358fa0ec93"
-          port = 80
-        },
-        {
-          target_id = "i-011fcb73baf867788"
-          port = 80
-        }
-      ]
     }
   ]
 
@@ -238,7 +222,51 @@ module "alb" {
   }
 }
 
-# resource "aws_autoscaling_attachment" "alb_autoscale" {
-#   alb_target_group_arn   = module.alb.target_group_arn
-#   autoscaling_group_name = "${aws_autoscaling_group.autoscale_group.id}"
+resource "aws_security_group" "lb_sg" {
+  name        = "and-loadbalancer-sg"
+  description = "Loadbalancer Web Security Group"
+  vpc_id      = module.vpc.vpc_id
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "servers_sg" {
+  name        = "and-servers-sg"
+  description = "Web Servers Security Group"
+  vpc_id      = module.vpc.vpc_id
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.lb_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# resource "aws_autoscaling_attachment" "asg_attachment" {
+#   autoscaling_group_name = module.asg.autoscaling_group_name
+#   elb                    = module.alb.lb_id
 # }
