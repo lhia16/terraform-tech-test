@@ -11,9 +11,9 @@ To create a load balanced front end in AWS that scales across multiple availabil
 - I repurposed a hosted zone in Route 53 (lhiagregg.com) that was created outside of this project. Edit the `r53_hosted_zone` and `domain_name` variables with your own selected hosted zone/domain.
 
 ### Usage
-Run `terraform init` at the root of the repo.
-Run `terraform plan` to show the resources that will be created.
-Run `terraform apply` to create the resources.
+- Run `terraform init` at the root of the repo.
+- Run `terraform plan` to show the resources that will be created.
+- Run `terraform apply` to create the resources.
 
 ### Outcome
 The result should be:
