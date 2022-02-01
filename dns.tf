@@ -1,6 +1,6 @@
 # My own hosted zone
 data "aws_route53_zone" "selected" {
-  name         = "lhiagregg.com."
+  name         = var.r53_hosted_zone
   private_zone = false
 }
 
@@ -9,7 +9,7 @@ data "aws_elb_hosted_zone_id" "main" {}
 
 resource "aws_route53_record" "www" {
   zone_id = data.aws_route53_zone.selected.zone_id
-  name    = "and-test.lhiagregg.com"
+  name    = var.domain_name
   type    = "A"
 
   alias {

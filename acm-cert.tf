@@ -2,16 +2,16 @@ module "acm" {
   source  = "terraform-aws-modules/acm/aws"
   version = "~> 3.0"
 
-  domain_name = "and-test.lhiagregg.com"
+  domain_name = var.domain_name
   zone_id     = data.aws_route53_zone.selected.zone_id
 
   subject_alternative_names = [
-    "*.and-test.lhiagregg.com"
+    "*.${var.domain_name}"
   ]
 
   wait_for_validation = true
 
   tags = {
-    Name = "and-test.lhiagregg.com"
+    Name = var.domain_name
   }
 }

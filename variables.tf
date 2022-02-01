@@ -1,4 +1,14 @@
 ###################################
+# Generic Variables
+###################################
+
+variable "project_name" {
+  description = "Name of project, to be re-used"
+  type        = string
+  default     = "and-tech-test"
+}
+
+###################################
 # VPC Variables
 ###################################
 
@@ -51,16 +61,35 @@ variable "vpc_tags" {
 # ASG Variables
 ###################################
 
-
+variable "vpc_enable_nat_gateway" {
+  description = "Enable NAT gateway for VPC"
+  type        = bool
+  default     = true
+}
 
 
 ###################################
 # LB Variables
 ###################################
 
-
-
+variable "lb_prefix" {
+  description = "Prefix for lb target group"
+  type        = string
+  default     = "andtechtest-"
+}
 
 ###################################
 # Miscellaneous Variables
 ###################################
+variable "r53_hosted_zone" {
+  description = "Prexisting hosted zone - DNS records will be added to"
+  type        = string
+  default     = "lhiagregg.com"
+}
+
+
+variable "domain_name" {
+  description = "Domain name created for this test"
+  type        = string
+  default     = "and-test.lhiagregg.com"
+}

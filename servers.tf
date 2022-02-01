@@ -23,7 +23,7 @@ module "asg" {
   version = "~> 4.0"
 
   # Autoscaling group
-  name = "and-tech-test-asg"
+  name = "${var.project_name}-asg"
 
   min_size                  = 2
   max_size                  = 3
@@ -63,7 +63,7 @@ module "asg" {
   }
 
   # Launch template
-  lt_name                = "example-asg"
+  lt_name                = "${var.project_name}-lt"
   description            = "Launch template example"
   update_default_version = true
 
@@ -103,21 +103,9 @@ module "asg" {
     capacity_reservation_preference = "open"
   }
 
-  #   cpu_options = {
-  #     core_count       = 1
-  #     threads_per_core = 1
-  #   }
-
   credit_specification = {
     cpu_credits = "standard"
   }
-
-  #   instance_market_options = {
-  #     market_type = "spot"
-  #     spot_options = {
-  #       block_duration_minutes = 60
-  #     }
-  #   }
 
   metadata_options = {
     http_endpoint               = "enabled"
@@ -158,22 +146,17 @@ module "asg" {
     },
     {
       key                 = "Project"
-      value               = "megasecret"
+      value               = var.project_name
       propagate_at_launch = true
     },
   ]
-
-  tags_as_map = {
-    extra_tag1 = "extra_value1"
-    extra_tag2 = "extra_value2"
-  }
 }
 
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 6.0"
 
-  name = "and-loadbalancer"
+  name = "${var.project_name}-loadbalancer"
 
   load_balancer_type = "application"
 
@@ -181,14 +164,9 @@ module "alb" {
   subnets         = module.vpc.public_subnets
   security_groups = [aws_security_group.lb_sg.id]
 
-
-  # access_logs = {
-  #   bucket = "my-alb-logs"
-  # }
-
   target_groups = [
     {
-      name_prefix      = "pref-"
+      name_prefix      = var.lb_prefix
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "instance"
@@ -223,7 +201,7 @@ module "alb" {
 }
 
 resource "aws_security_group" "lb_sg" {
-  name        = "and-loadbalancer-sg"
+  name        = "${var.project_name}-lb-sg"
   description = "Loadbalancer Web Security Group"
   vpc_id      = module.vpc.vpc_id
   ingress {
@@ -248,7 +226,7 @@ resource "aws_security_group" "lb_sg" {
 }
 
 resource "aws_security_group" "servers_sg" {
-  name        = "and-servers-sg"
+  name        = "${var.project_name}-servers-sg"
   description = "Web Servers Security Group"
   vpc_id      = module.vpc.vpc_id
   ingress {
@@ -265,8 +243,3 @@ resource "aws_security_group" "servers_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
-# resource "aws_autoscaling_attachment" "asg_attachment" {
-#   autoscaling_group_name = module.asg.autoscaling_group_name
-#   elb                    = module.alb.lb_id
-# }
