@@ -57,16 +57,6 @@ variable "vpc_tags" {
   }
 }
 
-###################################
-# ASG Variables
-###################################
-
-variable "vpc_enable_nat_gateway" {
-  description = "Enable NAT gateway for VPC"
-  type        = bool
-  default     = true
-}
-
 
 ###################################
 # LB Variables
@@ -75,7 +65,7 @@ variable "vpc_enable_nat_gateway" {
 variable "lb_prefix" {
   description = "Prefix for lb target group"
   type        = string
-  default     = "andtechtest-"
+  default     = "and-"
 }
 
 ###################################
